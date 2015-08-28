@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
+from django.dispatch import receiver
+
+from djasync.signals import async_call, method_called
 
 
 class Profile(models.Model):
@@ -38,3 +41,12 @@ class Profile(models.Model):
     class Meta:
         verbose_name = _('Profile')
         verbose_name_plural = _('Profile')
+
+    @async_call()
+    def hello(self, *args, **kwargs):
+        pass
+
+
+@receiver(method_called, sender=Profile)
+def porfile_method_called(sender, instance, method, **kwargs):
+    print "profile_method_called :", sender, instance, method
