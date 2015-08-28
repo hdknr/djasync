@@ -105,4 +105,6 @@ LANGUAGE_CODE = 'ja'
 TIME_ZONE = 'Asia/Tokyo'
 INSTALLED_APPS += (
     'app',
+    'profiles',
+    'djasync',
 )
