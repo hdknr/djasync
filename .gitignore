@@ -1,0 +1,9 @@
+.ropeproject
+.*.swp
+*.egg-info
+*.pyc
+app/local_settings.py
+*.sqlite3
+logs
+assets
+sample/upload
