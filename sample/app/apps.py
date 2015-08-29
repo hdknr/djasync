@@ -4,11 +4,11 @@ from django.utils.translation import (
     ugettext_lazy as _,
 )
 
-from djasync.queue import CeleryLoader
 
-# celery -A app.apps.celery  worker -l info
+# celery -A app.apps.celery worker -l info
 
-celery = CeleryLoader(__file__)
+from djasync.queue import CeleryModule
+celery = CeleryModule(__file__)
 
 
 class AppConfig(DjangoAppConfig):
@@ -16,4 +16,5 @@ class AppConfig(DjangoAppConfig):
     verbose_name = _("Application")
 
     def ready(self):
-        self.celery = CeleryLoader.create()
+        # for shared_task
+        self.celery = celery.app

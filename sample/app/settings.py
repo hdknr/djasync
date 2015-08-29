@@ -108,3 +108,8 @@ INSTALLED_APPS += (
     'profiles',
     'djasync',
 )
+# Celery
+try:
+    from app.celery import *    # noqa
+except:
+    CELERY_ALWAYS_EAGER = True
