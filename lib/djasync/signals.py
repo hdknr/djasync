@@ -1,43 +1,46 @@
-from django.contrib.contenttypes.models import ContentType
-from django.dispatch import dispatcher
-
+# from django.contrib.contenttypes.models import ContentType
+# from django.db.models import signals
 from celery import shared_task
 from functools import wraps
-
-method_called = dispatcher.Signal(providing_args=["instance", "method", ])
-
-
-def model_method_async(instance, action, *args, **kwargs):
-    ct = ContentType.objects.get_for_model(instance)
-    model_method.apply_async(
-        args=(ct.id, instance.id, action, ) + args,
-        kwargs=kwargs)
+import pydoc
 
 
 @shared_task
-def model_method(content_type_id, id, action, *args, **kwargs):
-    ct = ContentType.objects.get(id=content_type_id)
-    obj = ct.get_object_for_this_type(id=id)
-    return getattr(obj, action, lambda: '')(*args, **kwargs)
+def method_delegate(
+        modname, funcname, instance_id=None, sender=None,
+        *args, **kwargs):
+    '''Delegator call signal recevier '''
+    if sender and instance_id and modname:
+        instance = sender.objects.get(id=instance_id)
+        if hasattr(instance, funcname):
+            # TODO: there could be better way to identify method or function
+            getattr(instance, funcname)(delayed=True,
+                                        *args, **kwargs)
+        else:
+            mod = pydoc.locate(modname)
+            getattr(mod, funcname)(instance=instance, delayed=True,
+                                   *args, **kwargs)
 
 
-def async_call(signal=method_called, *args, **kwargs):
-    ''' asynchronous method call '''
+def async_receiver(*args, **kwargs):
+    ''' decorator for function for signal receiver '''
+    def _wrapper(decorated, *wargs, **wkwargs):
 
-    def _decorator(method, *d_args, **d_kwargs):
-
-        @wraps(method)
-        def wrapped(self, delayed=False, *m_args, **m_kwargs):
+        def _decorator(instance,
+                       delayed=False, signal=None, sender=None,
+                       *dargs, **dkwargs):
             if delayed:
-                model_method_async(
-                    self, method.func_name, *m_args, **m_kwargs)
+                # 1st argument of function MUST be `instance`
+                return decorated(instance,
+                                 *dargs, **dkwargs)
             else:
-                if signal:
-                    ct = ContentType.objects.get_for_model(self)
-                    signal.send(
-                        sender=ct.model_class(), instance=self,
-                        method=method.func_name)
-                return method(self, *m_args, **m_kwargs)
-        return wrapped
+                # drop `signal` argument
+                method_delegate.delay(
+                    decorated.__module__, decorated.func_name,
+                    instance_id=instance.id,
+                    sender=sender or type(instance),
+                    *dargs, **dkwargs)
 
-    return _decorator
+        return wraps(decorated)(_decorator)
+
+    return _wrapper

@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.dispatch import receiver
 
-from djasync.signals import async_call, method_called
+from djasync.signals import async_receiver
+from django.db.models import signals
 
 
 class Profile(models.Model):
@@ -42,11 +43,15 @@ class Profile(models.Model):
         verbose_name = _('Profile')
         verbose_name_plural = _('Profile')
 
-    @async_call()
+    @async_receiver()
     def hello(self, *args, **kwargs):
-        pass
+        print "@@@@ hello is called"
 
 
-@receiver(method_called, sender=Profile)
-def porfile_method_called(sender, instance, method, **kwargs):
-    print "profile_method_called :", sender, instance, method
+@receiver(signals.post_save, sender=Profile)
+@async_receiver()
+def on_profile_saved(instance, sender=None, *args, **kwargs):
+    '''if @async_receiver is specified, sender is None
+    '''
+    print "--------------------------------------------"
+    print "on_profile_saved:", sender, instance, kwargs
