@@ -24,11 +24,12 @@ def method_delegate(
 
 def async_receiver(*args, **kwargs):
     ''' decorator for function for signal receiver '''
-    def _wrapper(decorated, *wargs, **wkwargs):
+    def _decorator(decorated, *wargs, **wkwargs):
 
-        def _decorator(instance,
-                       delayed=False, signal=None, sender=None,
-                       *dargs, **dkwargs):
+        @wraps(decorated)
+        def _wrapped(instance,
+                     delayed=False, signal=None, sender=None,
+                     *dargs, **dkwargs):
             if delayed:
                 # 1st argument of function MUST be `instance`
                 return decorated(instance,
@@ -41,6 +42,6 @@ def async_receiver(*args, **kwargs):
                     sender=sender or type(instance),
                     *dargs, **dkwargs)
 
-        return wraps(decorated)(_decorator)
+        return _wrapped
 
-    return _wrapper
+    return _decorator
