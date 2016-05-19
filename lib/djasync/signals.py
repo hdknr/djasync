@@ -40,8 +40,7 @@ def async_receiver(*args, **kwargs):
             '''
             if delayed:
                 # 1st argument of function MUST be `instance`
-                return decorated(instance,
-                                 *dargs, **dkwargs)
+                return decorated(instance=instance, *dargs, **dkwargs)
             else:
                 # drop `signal` argument
                 if sender:
