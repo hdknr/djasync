@@ -16,14 +16,15 @@ def method_delegate(
     if sender and instance_id and modname:
         instance = ContentType.objects.get(
             **sender).get_object_for_this_type(id=instance_id)
+        task = getattr(method_delegate, 'request', None)
         if hasattr(instance, funcname):
             # TODO: there could be better way to identify method or function
-            getattr(instance, funcname)(delayed=True,
-                                        *args, **kwargs)
+            getattr(instance, funcname)(
+                delayed=True, task=task, *args, **kwargs)
         else:
             mod = pydoc.locate(modname)
-            getattr(mod, funcname)(instance=instance, delayed=True,
-                                   *args, **kwargs)
+            getattr(mod, funcname)(
+                instance=instance, delayed=True, task=task, *args, **kwargs)
 
 
 def async_receiver(*args, **kwargs):
